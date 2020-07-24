@@ -82,7 +82,7 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
   return (
     // ici ont ne fait pas la syntaxe concise comme sur le component list car ont doit avoir un block body pour utiliser onhange handlers
     <div>
-      <h1>Hacker Stories</h1>
+      <h1>Documentation</h1>
 
       <InputWithLabel // ont fait sa car si ont a un autre champs de recherche sur la page étant donner que la combinaison htmlFor et id et dupliquer ont peut avoir des bugs
         id="search"
