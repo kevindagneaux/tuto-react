@@ -1,14 +1,97 @@
-import React from 'react';
+import React from "react";
 import axios from "axios"; // import d'axios
 
-const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='; // URL de l'api qui va nous envoyer les data
+import styled from "styled-components";
 
-const useSemiPersistentState = (key, initialState) => { // hook custom qui reprend les 2 autres, j'utilise volontairement value pour pouvoir le réutiliser ou je veux avec de l'array destructuring d'ou l'utilisation de key pour pas écraser la value précedente si je l'utilise plusieurs fois
-  const [value, setValue] = React.useState( // fonction useState utiliser pour travailler sur des etat, La fonction useState est ce que l'ont apelle un hook ('crohet / hameçons')
+const StyledContainer = styled.div`
+  height: 100vw;
+  padding: 20px;
+  background: #83a4d4;
+  background: linear-gradient(to left, #b6fbff, #83a4d4);
+  color: #171212;
+`;
+
+const StyledHeadlinePrimary = styled.h1`
+  font-size: 48px;
+  font-weight: 300;
+  letter-spacing: 2px;
+`;
+
+const StyledItem = styled.div`
+  display: flex;
+  align-items: center;
+  padding-bottom: 5px;
+`;
+
+const StyledColumn = styled.span`
+  padding: 0 5px;
+  white-space: nowrap;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  a {
+    color: inherit;
+  }
+  width: ${(props) => props.width};
+`;
+
+const StyledButton = styled.button`
+  background: transparent;
+  border: 1px solid #171212;
+  padding: 5px;
+  cursor: pointer;
+  transition: all 0.1s ease-in;
+  &:hover {
+    background: #171212;
+    color: #ffffff;
+    svg {
+      g {
+        fill: #ffffff;
+        stroke: #ffffff;
+      }
+    }
+  }
+`;
+
+const StyledButtonSmall = styled(StyledButton)`
+  padding: 5px;
+`;
+
+const StyledButtonLarge = styled(StyledButton)`
+  padding: 10px;
+`;
+
+const StyledSearchForm = styled.form`
+  padding: 10px 0 20px 0;
+  display: flex;
+  align-items: baseline;
+`;
+
+const StyledLabel = styled.label`
+  border-top: 1px solid #171212;
+  border-left: 1px solid #171212;
+  padding-left: 5px;
+  font-size: 24px;
+`;
+
+const StyledInput = styled.input`
+  border: none;
+  border-bottom: 1px solid #171212;
+  background-color: transparent;
+  font-size: 24px;
+`;
+
+const API_ENDPOINT = "https://hn.algolia.com/api/v1/search?query="; // URL de l'api qui va nous envoyer les data
+
+const useSemiPersistentState = (key, initialState) => {
+  // hook custom qui reprend les 2 autres, j'utilise volontairement value pour pouvoir le réutiliser ou je veux avec de l'array destructuring d'ou l'utilisation de key pour pas écraser la value précedente si je l'utilise plusieurs fois
+  const [value, setValue] = React.useState(
+    // fonction useState utiliser pour travailler sur des etat, La fonction useState est ce que l'ont apelle un hook ('crohet / hameçons')
     localStorage.getItem(key) || initialState // utilisation stockage en local de sont navigateur pour stocker une clé et un état initaile encore pour un soucis de réusabilité (je sais pas si ce mot est français mais ta compris)
   );
 
-  React.useEffect(() => { // Second type de hook aprés useState, le navigateur utilise sont stockage en local pour afficher la derniere value utiliser, cela peut être vue comme un "side-effect" car ont intéragie avec l'API de sont navigateur en dehors de react.
+  React.useEffect(() => {
+    // Second type de hook aprés useState, le navigateur utilise sont stockage en local pour afficher la derniere value utiliser, cela peut être vue comme un "side-effect" car ont intéragie avec l'API de sont navigateur en dehors de react.
     localStorage.setItem(key, value);
     console.log(value);
     console.log(key);
@@ -17,32 +100,33 @@ const useSemiPersistentState = (key, initialState) => { // hook custom qui repre
   return [value, setValue];
 };
 
-const storiesReducer = (state, action) => { // bon ici j'ai utiliser des switch et des cases, déja pour changer un peut de syntax et surtout parceque des if else imbriquer dans tout les sens sa me gonfle et c'est ilisible
+const storiesReducer = (state, action) => {
+  // bon ici j'ai utiliser des switch et des cases, déja pour changer un peut de syntax et surtout parceque des if else imbriquer dans tout les sens sa me gonfle et c'est ilisible
   switch (action.type) {
-    case 'STORIES_FETCH_INIT':
+    case "STORIES_FETCH_INIT":
       return {
         ...state,
         isLoading: true,
         isError: false,
       };
-    case 'STORIES_FETCH_SUCCESS':
+    case "STORIES_FETCH_SUCCESS":
       return {
         ...state,
         isLoading: false,
         isError: false,
         data: action.payload,
       };
-    case 'STORIES_FETCH_FAILURE':
+    case "STORIES_FETCH_FAILURE":
       return {
         ...state,
         isLoading: false,
         isError: true,
       };
-    case 'REMOVE_STORY':
+    case "REMOVE_STORY":
       return {
         ...state,
         data: state.data.filter(
-          story => action.payload.objectID !== story.objectID
+          (story) => action.payload.objectID !== story.objectID
         ),
       };
     default:
@@ -50,33 +134,34 @@ const storiesReducer = (state, action) => { // bon ici j'ai utiliser des switch 
   }
 };
 
-const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> App     "=" -> est        "()"-> une fonction *** peux aussi s'écrire: "function App()" mais ont fait du React la donc ont utilise au plus les composants stateless quand c'est possible
+const App = () => {
+  // TRADUCTION DU CODE: "const" -> la constante     "App" -> App     "=" -> est        "()"-> une fonction *** peux aussi s'écrire: "function App()" mais ont fait du React la donc ont utilise au plus les composants stateless quand c'est possible
   const [searchTerm, setSearchTerm] = useSemiPersistentState(
-    'search', // key di hook = search
-    'React' // etat initiale du hook = React
+    "search", // key di hook = search
+    "React" // etat initiale du hook = React
   );
 
-  const [url, setUrl] = React.useState(
-    `${API_ENDPOINT}${searchTerm}`
-  );
+  const [url, setUrl] = React.useState(`${API_ENDPOINT}${searchTerm}`);
 
-  const [stories, dispatchStories] = React.useReducer( // tableau vide pour récuperation des data, dispatchstories va me servir a générer l'etat de mes actions et le resultat qui va en découller
+  const [stories, dispatchStories] = React.useReducer(
+    // tableau vide pour récuperation des data, dispatchstories va me servir a générer l'etat de mes actions et le resultat qui va en découller
     storiesReducer,
     { data: [], isLoading: false, isError: false }
   );
 
-  const handleFetchStories = React.useCallback(async () => { // je déplace toutes mes data récupérer dans une fonction en dehors du side effect, je les je les envoie avec un hooke useCallback 
-    dispatchStories({ type: 'STORIES_FETCH_INIT' });
+  const handleFetchStories = React.useCallback(async () => {
+    // je déplace toutes mes data récupérer dans une fonction en dehors du side effect, je les je les envoie avec un hooke useCallback
+    dispatchStories({ type: "STORIES_FETCH_INIT" });
 
     try {
       const result = await axios.get(url); // Utilisation d'axios plutot que fetch. l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
       // toute les actions aprés le await ne sont pas éxécuter tant que la promise n'est pas résolue.
       dispatchStories({
-        type: 'STORIES_FETCH_SUCCESS',
-        payload: result.data.hits // sa envoie un payload a l'etat de notre component
+        type: "STORIES_FETCH_SUCCESS",
+        payload: result.data.hits, // sa envoie un payload a l'etat de notre component
       });
     } catch {
-      dispatchStories({type: 'STORIES_FETCH_FAILURE'})
+      dispatchStories({ type: "STORIES_FETCH_FAILURE" });
     }
   }, [url]);
 
@@ -103,35 +188,33 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
   Le fait d'utiliser useCallback fait que le  la fonction lance une recherche seulement quand les therme dans la barre de recheche change
   */
 
-  const handleRemoveStory = item => { // suppresion d'un item de la liste, avec comme type d'action remove story
+  const handleRemoveStory = (item) => {
+    // suppresion d'un item de la liste, avec comme type d'action remove story
     dispatchStories({
-      type: 'REMOVE_STORY',
+      type: "REMOVE_STORY",
       payload: item,
     });
   };
 
-  const handleSearchInput = event => {
+  const handleSearchInput = (event) => {
     setSearchTerm(event.target.value);
   };
 
-  const handleSearchSubmit = event => { // envoie de la fin de l'url si jamais l'ont éffectue une recherche et que l'ont appuie sur le bouton
+  const handleSearchSubmit = (event) => {
+    // envoie de la fin de l'url si jamais l'ont éffectue une recherche et que l'ont appuie sur le bouton
     setUrl(`${API_ENDPOINT}${searchTerm}`);
 
     event.preventDefault();
   };
 
   return (
-    <div>
-      <h1>Hacker News</h1>
-
+    <StyledContainer>
+      <StyledHeadlinePrimary>Histoires d'Hacker</StyledHeadlinePrimary>
       <SearchForm // utilisation du component SearchForm qui contient notre formulaire et notre bouton d'envoie
         searchTerm={searchTerm} // ici on définis searchTerm comme étant le string contenue dans le derniers envoie du formulaire
         onSearchInput={handleSearchInput}
         onSearchSubmit={handleSearchSubmit}
       />
-
-      <hr />
-      
       {stories.isError && <p>Une erreur est survenue . . .</p>}{" "}
       {/* avec react '&&' est trés pratique, si la condition est true l'expression aprés le '&&' est sortie, si c'est false React ignore totalement l'expression */}
       {stories.isLoading ? (
@@ -142,16 +225,12 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
           onRemoveItem={handleRemoveStory}
         />
       )}
-    </div>
+    </StyledContainer>
   );
 };
 
-const SearchForm = ({
-  searchTerm,
-  onSearchInput,
-  onSearchSubmit,
-}) => (
-  <form onSubmit={onSearchSubmit}>
+const SearchForm = ({ searchTerm, onSearchInput, onSearchSubmit }) => (
+  <StyledSearchForm onSubmit={onSearchSubmit}>
     <InputWithLabel // ont fait sa car si ont a un autre champs de recherche sur la page étant donner que la combinaison htmlFor et id et dupliquer ont peut avoir des bugs
       id="search"
       value={searchTerm}
@@ -161,16 +240,17 @@ const SearchForm = ({
       <strong>Rechercher:</strong> {/* premier enfant de 'inputWithLabel' */}
     </InputWithLabel>
 
-    <button type="submit" disabled={!searchTerm}>
+    <StyledButtonLarge type="submit" disabled={!searchTerm}>
       Envoyer
-    </button>
-  </form>
+    </StyledButtonLarge>
+  </StyledSearchForm>
 );
 
-const InputWithLabel = ({ // pour éviter d'avoir a taper 'props.' sinon ont devrais taper 'value={props.value}' et 'onChange={props.onInputChange}'
+const InputWithLabel = ({
+  // pour éviter d'avoir a taper 'props.' sinon ont devrais taper 'value={props.value}' et 'onChange={props.onInputChange}'
   id,
   value,
-  type = 'text',
+  type = "text",
   onInputChange,
   isFocused,
   children,
@@ -184,10 +264,15 @@ const InputWithLabel = ({ // pour éviter d'avoir a taper 'props.' sinon ont dev
   }, [isFocused]);
 
   return (
-    <> {/* "<>" et "</>" sont des input wrap sa permet de pas avoir a marquer div ou span par exemple, je suis pas fan de cette syntaxe mais sa a le mérite d'être autoriser en JSX */}
-      <label htmlFor={id}>{children}</label> {/* Utilisation du premier enfant de inputWithLabel pour l'affichage du champs de recherche */}
+    <>
+      {" "}
+      {/* "<>" et "</>" sont des input wrap sa permet de pas avoir a marquer div ou span par exemple, je suis pas fan de cette syntaxe mais sa a le mérite d'être autoriser en JSX */}
+      <StyledLabel htmlFor={id}>
+        {children}
+      </StyledLabel>
+      {/* Utilisation du premier enfant de inputWithLabel pour l'affichage du champs de recherche */}
       &nbsp;
-      <input
+      <StyledInput
         ref={inputRef}
         id={id}
         type={type}
@@ -199,7 +284,7 @@ const InputWithLabel = ({ // pour éviter d'avoir a taper 'props.' sinon ont dev
 };
 
 const List = ({ list, onRemoveItem }) =>
-  list.map(item => (
+  list.map((item) => (
     <Item
       key={item.objectID} // ici ont prend L'objectId et pas l'index dans le tableux sinon sa peut tout foutre en l'air avec des modif dans le tableau
       item={item}
@@ -208,19 +293,20 @@ const List = ({ list, onRemoveItem }) =>
   ));
 
 const Item = ({ item, onRemoveItem }) => (
-  <div>
-    <span>
+  <StyledItem>
+    <StyledColumn width="40%">
       <a href={item.url}>{item.title}</a>
-    </span>
-    <span>{item.author}</span>
-    <span>{item.num_comments}</span>
-    <span>{item.points}</span>
-    <span>
-      <button type="button" onClick={() => onRemoveItem(item)}> {/* bouton de suppresion pour un item de la liste méthode d'implémentation la plus simple a implémenter mais plus difficile à débugger a cause de JSX*/}
-        Dismiss
-      </button>
-    </span>
-  </div>
+    </StyledColumn>
+    <StyledColumn width="30%">{item.author}</StyledColumn>
+    <StyledColumn width="10%">{item.num_comments}</StyledColumn>
+    <StyledColumn width="10%">{item.points}</StyledColumn>
+    <StyledColumn width="10%">
+      <StyledButtonSmall type="button" onClick={() => onRemoveItem(item)}>
+        {" "}
+        {/* bouton de suppresion pour un item de la liste méthode d'implémentation la plus simple a implémenter mais plus difficile à débugger a cause de JSX*/}
+      </StyledButtonSmall>
+    </StyledColumn>
+  </StyledItem>
 );
 
 export default App;

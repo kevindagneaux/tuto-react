@@ -22,3 +22,7 @@ un suppresion d'ellement de la liste par un bouton
 récupération de vrai data depuis une API
 
 Un petit formulaire juste pour la forme
+
+Un peut de style avec react CSS-in-JS
+
+## maintenace et tests
