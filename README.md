@@ -23,6 +23,12 @@ récupération de vrai data depuis une API
 
 Un petit formulaire juste pour la forme
 
-Un peut de style avec react CSS-in-JS
+Un peut de style avec react CSS-in-JS (pas de commentaire sur le code je ne maitrise pas encore tout a fait)
 
 ## maintenace et tests
+
+npm test pour lancer les tests
+
+Outils de test utilisé:
+    - Jest
+    - React Teasting Library
