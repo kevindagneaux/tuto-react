@@ -65,21 +65,19 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
     { data: [], isLoading: false, isError: false }
   );
 
-  const handleFetchStories = React.useCallback(() => { // je déplace toutes mes data récupérer dans une fonction en dehors du side effect, je les je les envoie avec un hooke useCallback 
-
+  const handleFetchStories = React.useCallback(async () => { // je déplace toutes mes data récupérer dans une fonction en dehors du side effect, je les je les envoie avec un hooke useCallback 
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-    axios
-      .get(url) // Utilisation d'axios plutot que fetch. l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
-      .then(result => {
-        dispatchStories({
-          type: 'STORIES_FETCH_SUCCESS',
-          payload: result.data.hits, // sa envoie un payload a l'etat de notre component
-        });
-      })
-      .catch(() =>
-        dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
-      );
+    try {
+      const result = await axios.get(url); // Utilisation d'axios plutot que fetch. l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
+      // toute les actions aprés le await ne sont pas éxécuter tant que la promise n'est pas résolue.
+      dispatchStories({
+        type: 'STORIES_FETCH_SUCCESS',
+        payload: result.data.hits // sa envoie un payload a l'etat de notre component
+      });
+    } catch {
+      dispatchStories({type: 'STORIES_FETCH_FAILURE'})
+    }
   }, [url]);
 
   React.useEffect(() => {
@@ -116,46 +114,58 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
     setSearchTerm(event.target.value);
   };
 
-  const handleSearchSubmit = () => { // envoie de la fin de l'url si jamais l'ont éffectue une recherche et que l'ont appuie sur le bouton
+  const handleSearchSubmit = event => { // envoie de la fin de l'url si jamais l'ont éffectue une recherche et que l'ont appuie sur le bouton
     setUrl(`${API_ENDPOINT}${searchTerm}`);
+
+    event.preventDefault();
   };
 
   return (
     <div>
       <h1>Hacker News</h1>
 
-      <InputWithLabel // ont fait sa car si ont a un autre champs de recherche sur la page étant donner que la combinaison htmlFor et id et dupliquer ont peut avoir des bugs
-        id="search"
-        value={searchTerm}
-        isFocused
-        onInputChange={handleSearchInput}
-      >
-        <strong>Rechercher:</strong> {/* premier enfant de 'inputWithLabel' */}
-      </InputWithLabel>
-
-      <button
-        type="button"
-        disabled={!searchTerm}
-        onClick={handleSearchSubmit}
-      >
-        Envoyer
-      </button>
+      <SearchForm // utilisation du component SearchForm qui contient notre formulaire et notre bouton d'envoie
+        searchTerm={searchTerm} // ici on définis searchTerm comme étant le string contenue dans le derniers envoie du formulaire
+        onSearchInput={handleSearchInput}
+        onSearchSubmit={handleSearchSubmit}
+      />
 
       <hr />
-
-      {stories.isError && <p>Une erreur est survenue . . .</p>} {/* avec react '&&' est trés pratique, si la condition est true l'expression aprés le '&&' est sortie, si c'est false React ignore totalement l'expression */}
-
+      
+      {stories.isError && <p>Une erreur est survenue . . .</p>}{" "}
+      {/* avec react '&&' est trés pratique, si la condition est true l'expression aprés le '&&' est sortie, si c'est false React ignore totalement l'expression */}
       {stories.isLoading ? (
         <p>Chargement . . .</p>
       ) : (
         <List // appelle du component "List" et ont définis que list est égale au data renvoyer par L'API
-          list={stories.data} 
+          list={stories.data}
           onRemoveItem={handleRemoveStory}
         />
       )}
     </div>
   );
 };
+
+const SearchForm = ({
+  searchTerm,
+  onSearchInput,
+  onSearchSubmit,
+}) => (
+  <form onSubmit={onSearchSubmit}>
+    <InputWithLabel // ont fait sa car si ont a un autre champs de recherche sur la page étant donner que la combinaison htmlFor et id et dupliquer ont peut avoir des bugs
+      id="search"
+      value={searchTerm}
+      isFocused
+      onInputChange={onSearchInput}
+    >
+      <strong>Rechercher:</strong> {/* premier enfant de 'inputWithLabel' */}
+    </InputWithLabel>
+
+    <button type="submit" disabled={!searchTerm}>
+      Envoyer
+    </button>
+  </form>
+);
 
 const InputWithLabel = ({ // pour éviter d'avoir a taper 'props.' sinon ont devrais taper 'value={props.value}' et 'onChange={props.onInputChange}'
   id,
