@@ -1,31 +1,6 @@
 import React from 'react';
 
-const initialStories = [ // constante contenant les stories, quand ont filtre la liste avec InputWithLabel, la liste reste intacte
-  {
-    title: 'React',
-    url: 'https://reactjs.org/',
-    author: 'Jordan Walke',
-    num_comments: 3,
-    points: 4,
-    objectID: 0, // pour éviter tout futur probleme dans des recheche ou affichage 
-  },
-  {
-    title: 'Redux',
-    url: 'https://redux.js.org/',
-    author: 'Dan Abramov, Andrew Clark',
-    num_comments: 2,
-    points: 5,
-    objectID: 1,
-  },
-];
-
-const getAsyncStories = () => // fonction asynchrone pour simuler la récupération de donnée depuis une API externe, pour un meilleur rendu j'ai rajouter du délay pour pas que se soit instantannée.
-  new Promise(resolve =>
-    setTimeout(
-      () => resolve({ data: { stories: initialStories } }),// ici ont établie une promesse ce qui veux dire que l'ont autorise une génération vide et que des data viendront remplie la génération plus tard
-      2000 // délaie juste pour faire genre ont récupere vraiment des donées d'une autre API, si ont veux l'enlever il suffit de supprimer le setTimeout, le délaie de 2000 et '() =>' devant le resolve
-    )
-  );
+const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='; // URL de l'api qui va nous envoyer les data
 
 const useSemiPersistentState = (key, initialState) => { // hook custom qui reprend les 2 autres, j'utilise volontairement value pour pouvoir le réutiliser ou je veux avec de l'array destructuring d'ou l'utilisation de key pour pas écraser la value précedente si je l'utilise plusieurs fois
   const [value, setValue] = React.useState( // fonction useState utiliser pour travailler sur des etat, La fonction useState est ce que l'ont apelle un hook ('crohet / hameçons')
@@ -80,25 +55,54 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
     'React' // etat initiale du hook = React
   );
 
+  const [url, setUrl] = React.useState(
+    `${API_ENDPOINT}${searchTerm}`
+  );
+
   const [stories, dispatchStories] = React.useReducer( // tableau vide pour récuperation des data, dispatchstories va me servir a générer l'etat de mes actions et le resultat qui va en découller
     storiesReducer,
     { data: [], isLoading: false, isError: false }
   );
 
-  React.useEffect(() => {
+  const handleFetchStories = React.useCallback(() => { // je déplace toutes mes data récupérer dans une fonction en dehors du side effect, je les je les envoie avec un hooke useCallback 
+
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-    getAsyncStories() // ici j'apelle la fonction getAsyncStories et je résous la promise, a cause du tableau vide, le side-effect se realisera qu'une seule fois au premier rendu du component
+    fetch(url) // l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
+      .then(response => response.json()) // ici ont attend une reponse et ont a besoins que se soit du json
       .then(result => {
         dispatchStories({
           type: 'STORIES_FETCH_SUCCESS',
-          payload: result.data.stories,
+          payload: result.hits, // sa envoie un payload a l'etat de notre component
         });
       })
       .catch(() =>
         dispatchStories({ type: 'STORIES_FETCH_FAILURE' })
       );
-  }, []);
+  }, [url]);
+
+  React.useEffect(() => {
+    handleFetchStories(); // et je récupere mes data envoyer avec le useCallback ici
+  }, [handleFetchStories]);
+
+  /* 
+  PETIT POINT TECHNO, POURQUOI AVOIR FAIT UNE FONCTION AVEC USECALLBACK ICI?
+  si l'ont avait pas fait de fonction avec useCallback une nouvelle fonction handleFetchStories aurait était créer
+  a chaque rendu de App component, et aurait était éxécuter avec le hook useEffect pour récupérer les data, les
+  data ainsi récuperer aurait était stocker comme état dans le component, parceque l'etat du component avait changer.
+  Ce qui aurait eu pour éffet de créer une nouvelle fois la fonction handleFetchStories, et le side effect aurait était déclencher
+  pour récuperer les data. boucle infini.
+  1. une recherche ce fait
+  2. la fonction handleFetchStories se lance pour cherche les resultat correspondant
+  3. Récupération des datas coorepondantes avec useEffect
+  4. App component fait un nouveaux rendu avec les data correpondantes a la recherche
+  5. l'etat de App component change vue que useEffect a valider sont changement d'etat
+  6. les data sont stockée comme état de App component
+  7. la fonction handleFetchStories voit que l'etat de App component n'est pas le même que celui renvoyait en dernier par le side effect et useEffect 
+  8. la fonction ce dit que c'est une nouvelle recherche
+  9. repartir de l'étape 1
+  Le fait d'utiliser useCallback fait que le  la fonction lance une recherche seulement quand les therme dans la barre de recheche change
+  */
 
   const handleRemoveStory = item => { // suppresion d'un item de la liste, avec comme type d'action remove story
     dispatchStories({
@@ -107,27 +111,34 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
     });
   };
 
-  const handleSearch = event => { // lorsque l'ont va taper quelque chose dans la recherche il va nous resortir un log dans la console c'est ce que l'ont apelle un synthetic event
-    console.log(event.target.value);
-    setSearchTerm(event.target.value); // handler callback pour repasser les infos ecrite depuis le component search dans App por appliquer le filtre de recherche
+  const handleSearchInput = event => {
+    setSearchTerm(event.target.value);
   };
 
-  const searchedStories = stories.data.filter(story =>
-    story.title.toLowerCase().includes(searchTerm.toLowerCase()) // fonction du filtre avec un lowerCase pour faciliter la recheche
-  );
+  const handleSearchSubmit = () => { // envoie de la fin de l'url si jamais l'ont éffectue une recherche et que l'ont appuie sur le bouton
+    setUrl(`${API_ENDPOINT}${searchTerm}`);
+  };
 
   return (
     <div>
-      <h1>Documentation</h1>
+      <h1>Hacker News</h1>
 
       <InputWithLabel // ont fait sa car si ont a un autre champs de recherche sur la page étant donner que la combinaison htmlFor et id et dupliquer ont peut avoir des bugs
         id="search"
         value={searchTerm}
         isFocused
-        onInputChange={handleSearch}
+        onInputChange={handleSearchInput}
       >
         <strong>Rechercher:</strong> {/* premier enfant de 'inputWithLabel' */}
       </InputWithLabel>
+
+      <button
+        type="button"
+        disabled={!searchTerm}
+        onClick={handleSearchSubmit}
+      >
+        Envoyer
+      </button>
 
       <hr />
 
@@ -136,8 +147,8 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
       {stories.isLoading ? (
         <p>Chargement . . .</p>
       ) : (
-        <List // appelle du component "List" et ont définis que list est égale a la constante searchedStories qui quand rien n'est filtrer renvoie la liste complete
-          list={searchedStories}
+        <List // appelle du component "List" et ont définis que list est égale au data renvoyer par L'API
+          list={stories.data} 
           onRemoveItem={handleRemoveStory}
         />
       )}
