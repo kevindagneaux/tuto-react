@@ -2,6 +2,13 @@
 
 npm start pour lancer le serveur local sur http://localhost:3000/
 
+## axios
+ utilisation de la librairie axios pour subtituer la récupération de data native par une librairie
+
+ notament pour un soucis de compatibilité avec les navigateurs headless 
+
+ npm install axios
+
 ## contenue
 
 une liste qui s'affiche,

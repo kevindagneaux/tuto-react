@@ -1,4 +1,5 @@
 import React from 'react';
+import axios from "axios"; // import d'axios
 
 const API_ENDPOINT = 'https://hn.algolia.com/api/v1/search?query='; // URL de l'api qui va nous envoyer les data
 
@@ -68,12 +69,12 @@ const App = () => { // TRADUCTION DU CODE: "const" -> la constante     "App" -> 
 
     dispatchStories({ type: 'STORIES_FETCH_INIT' });
 
-    fetch(url) // l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
-      .then(response => response.json()) // ici ont attend une reponse et ont a besoins que se soit du json
+    axios
+      .get(url) // Utilisation d'axios plutot que fetch. l'url correpond au début a API_ENDPOINT et la fin a la recherche que l'ont effectue.
       .then(result => {
         dispatchStories({
           type: 'STORIES_FETCH_SUCCESS',
-          payload: result.hits, // sa envoie un payload a l'etat de notre component
+          payload: result.data.hits, // sa envoie un payload a l'etat de notre component
         });
       })
       .catch(() =>
