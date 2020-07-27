@@ -13,7 +13,7 @@ import {
   screen,
   fireEvent,
   act,
-  } from '@testing-library/react';
+} from '@testing-library/react';
 
 describe("test tuto", () => { // une description clair du test c'est le "test suite"
   test("true to be true", () => { // ce que l'ont test c'est le "test case"

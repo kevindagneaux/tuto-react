@@ -309,6 +309,7 @@ const Item = ({ item, onRemoveItem }) => (
   </StyledItem>
 );
 
+// page 186
 export default App;
 
 export { storiesReducer, SearchForm, InputWithLabel, List, Item };
